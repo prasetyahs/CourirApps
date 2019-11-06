@@ -30,15 +30,11 @@ public class DirectionRepository {
             public void onResponse(@NonNull Call<Direction> call, @NonNull Response<Direction> response) {
                 if (response.body() != null) {
                     mutableLiveData.postValue(response.body());
-                } else {
-                    System.out.println(this.getClass().getSimpleName() + "null");
                 }
-                System.out.println(response.raw().request().url());
             }
 
             @Override
             public void onFailure(@NonNull Call<Direction> call, @NonNull Throwable t) {
-                System.out.println(this.getClass().getSimpleName() + t.getMessage());
             }
         });
         return mutableLiveData;

@@ -36,10 +36,12 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.material.snackbar.Snackbar;
 import com.syncode.courirapps.R;
 import com.syncode.courirapps.data.local.SystemDataLocal;
+import com.syncode.courirapps.data.model.TrackingModel;
 import com.syncode.courirapps.data.model.Transaction;
 import com.syncode.courirapps.data.model.direction.Direction;
 import com.syncode.courirapps.data.model.direction.FeatureDirection;
 import com.syncode.courirapps.data.model.direction.Geometry;
+import com.syncode.courirapps.data.network.repository.FirebaseRepository;
 import com.syncode.courirapps.ui.detail.DetailTransactionActivity;
 import com.syncode.courirapps.ui.login.LoginActivity;
 import com.syncode.courirapps.utils.Formula;
@@ -57,6 +59,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Marker courierMarker;
     private LocationRequest locationRequest;
     private LatLng locationCourier;
+    private GoogleMap maps;
+    private List<Transaction> transactionList;
     private LocationProvider locationProvider;
     private MapsViewModel mapsViewModel;
     private double myLocationLat, myLocationLon;
@@ -67,6 +71,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private SystemDataLocal systemDataLocal;
     private ConstraintLayout rootLayout;
     private Polyline polylineDirection;
+    private TrackingModel trackingModel;
+    private FirebaseRepository firebaseRepository;
     private LocationCallback locationCallback = new LocationCallback() {
         @Override
         public void onLocationResult(LocationResult locationResult) {
@@ -79,13 +85,25 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     myLocationLat = location.getLatitude();
                     myLocationLon = location.getLongitude();
                     locationCourier = new LatLng(myLocationLat, myLocationLon);
+                    if (systemDataLocal.getStatusCourier()) {
+                        if (trackingModel != null && trackingModel.getIdTransaction() != null) {
+                            trackingModel.setLat(myLocationLat);
+                            trackingModel.setLont(myLocationLon);
+                            double distance = Formula.haversineFormula(myLocationLon, trackingModel.getLot2(), myLocationLat, trackingModel.getLat2());
+                            if (distance < 5.0) {
+                                trackingModel.setStatus("Pesanan Anda Sebentar Lagi Sampai");
+                            }
+                            firebaseRepository.setTrackingCoordinate(trackingModel);
+                        }
+                    }
                     mapsCourier.setBuildingsEnabled(true);
                     if (courierMarker == null) {
+                        System.out.println("true");
                         courierMarker = mapsCourier.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromResource(R.drawable.car2)).position(locationCourier));
                     } else {
                         //MarkerAnimation.animateMarkerToGB(courierMarker, locationCourier, new LatLngInterpolator.Spherical());
-                        courierMarker = mapsCourier.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromResource(R.drawable.car2)).position(locationCourier));
                         courierMarker.remove();
+                        courierMarker = mapsCourier.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromResource(R.drawable.car2)).position(locationCourier));
                     }
                 }
             }
@@ -112,13 +130,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         setContentView(R.layout.activity_maps);
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
+        mapsViewModel = ViewModelProviders.of(MapsActivity.this).get(MapsViewModel.class);
         locationRequest = LocationRequest.create();
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         locationRequest.setInterval(3000); //3 seconds
         locationProvider = new LocationProvider(this);
         systemDataLocal = new SystemDataLocal(this);
-        mapsViewModel = ViewModelProviders.of(MapsActivity.this).get(MapsViewModel.class);
         rootLayout = findViewById(R.id.rootLayout);
+        trackingModel = new TrackingModel();
+        firebaseRepository = new FirebaseRepository();
     }
 
 
@@ -132,6 +152,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (polylineDirection != null) {
             polylineDirection.remove();
         }
+        if (maps != null) {
+            maps.clear();
+            if (courierMarker == null) {
+                courierMarker = mapsCourier.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromResource(R.drawable.car2)).position(locationCourier));
+            }
+        }
     }
 
     @Override
@@ -142,20 +168,25 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        GoogleMap mMap = googleMap;
+        maps = googleMap;
         mapsCourier = googleMap;
+        if (transactionList != null) {
+            transactionList.clear();
+            showSnackBar("", "", null).dismiss();
+        }
         mapsViewModel.getTransaction(systemDataLocal.getLoginData().getIdCourier()).observe(this, transactionResponse -> {
             int position = 0;
             if (transactionResponse != null) {
                 if (transactionResponse.getDataTransaction().size() > 0) {
-                    for (Transaction trans : transactionResponse.getDataTransaction()) {
+                    transactionList = transactionResponse.getDataTransaction();
+                    for (Transaction trans : transactionList) {
                         String[] coor = trans.getCoordinate().split(",");
                         double latT = Double.parseDouble(coor[0]);
                         double lotT = Double.parseDouble(coor[1]);
                         double distance = Formula.haversineFormula(lotT, myLocationLon, latT, myLocationLat);
                         trans.setDistance(distance);
                         locationAgent = new LatLng(latT, lotT);
-                        agentMarker = mMap.addMarker(new MarkerOptions().position(locationAgent));
+                        agentMarker = maps.addMarker(new MarkerOptions().position(locationAgent));
                         agentMarker.setTitle(trans.getFname());
                         agentMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.store));
                         agentMarker.setTag(position);
@@ -164,7 +195,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     Collections.sort(transactionResponse.getDataTransaction(), (transaction, t1) -> Double.compare(transaction.getDistance(), t1.getDistance()));
                 }
             }
-            mMap.setOnMarkerClickListener(marker -> {
+            maps.setOnMarkerClickListener(marker -> {
                 int pos = (int) marker.getTag();
                 if (pos > 1) {
                     Toast.makeText(MapsActivity.this, "Pilih Jarak Terdekat Terlebih Dahulu", Toast.LENGTH_LONG).show();
@@ -238,10 +269,22 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         TextView txtName = view.findViewById(R.id.txtName);
         TextView txtAddress = view.findViewById(R.id.txtAddress);
         Button btnDetail = view.findViewById(R.id.btnDetail);
-        btnDetail.setOnClickListener(view1 -> SwitchActivity.mainSwitch(this, DetailTransactionActivity.class, transaction, "transaction"));
+        btnDetail.setOnClickListener(view1 -> {
+            trackingModel.setIdTransaction(transaction.getIdTransaction());
+            systemDataLocal.setStatusCourier(true);
+            String[] coordinate = transaction.getCoordinate().split(",");
+            trackingModel.setStatus("Sedang di kirim");
+            double lat = Double.parseDouble(coordinate[0]);
+            double lon = Double.parseDouble(coordinate[1]);
+            trackingModel.setLat2(lat);
+            trackingModel.setLot2(lon);
+            snackbar.dismiss();
+            mapsViewModel.getResponsesUpdateStatus(transaction.getIdTransaction(), 2).observe(this, messageOnly -> {});
+            SwitchActivity.mainSwitch(this, DetailTransactionActivity.class, transaction, "transaction");
+        });
+
         txtName.setText(name);
         txtAddress.setText(address);
-
         return snackbar;
     }
 
@@ -253,5 +296,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             finish();
         }
         return super.onOptionsItemSelected(item);
+    }
+
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
     }
 }

@@ -11,7 +11,7 @@ public class SystemDataLocal {
     private SharedPreferences sharedPreferences;
     private Context context;
     private static final String KEY_USER = "User";
-    private static final String KEY_ADDR = "address";
+    private static final String KEY_STS = "status";
     private Courier courier;
 
 
@@ -69,6 +69,23 @@ public class SystemDataLocal {
         String password = sharedPreferences.getString("password", "");
         String type = sharedPreferences.getString("type", "");
         return new Courier(username, fname, lname, email, type, idCourier, password);
+    }
+
+    public void setStatusCourier(boolean status) {
+        sharedPreferences = context.getSharedPreferences(KEY_STS, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean("status", status);
+        editor.apply();
+    }
+
+    public boolean getStatusCourier() {
+        sharedPreferences = context.getSharedPreferences(KEY_STS, Context.MODE_PRIVATE);
+        return sharedPreferences.getBoolean("status", false);
+    }
+
+    public void destroyStatus() {
+        sharedPreferences = context.getSharedPreferences(KEY_STS, Context.MODE_PRIVATE);
+        sharedPreferences.edit().clear().apply();
     }
 
     public boolean getCheckLogin() {

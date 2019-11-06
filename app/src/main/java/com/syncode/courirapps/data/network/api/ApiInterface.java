@@ -1,5 +1,6 @@
 package com.syncode.courirapps.data.network.api;
 
+import com.syncode.courirapps.data.model.MessageOnly;
 import com.syncode.courirapps.data.model.direction.Direction;
 import com.syncode.courirapps.data.response.LoginResponse;
 import com.syncode.courirapps.data.response.TransactionResponse;
@@ -26,4 +27,7 @@ public interface ApiInterface {
     @GET("v1/routing?")
     Call<Direction> getDirection(@Query("waypoints") String wayPoints, @Query("mode") String mode, @Query("apiKey") String apiKey);
 
+    @FormUrlEncoded
+    @POST("transaction/changestatus")
+    Call<MessageOnly> updateStatusTransaction(@Field("id_transaksi") String idTransaction, @Field("status_order") int statusOrder);
 }

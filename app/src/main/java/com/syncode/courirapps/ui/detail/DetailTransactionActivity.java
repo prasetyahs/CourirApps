@@ -6,12 +6,19 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProviders;
 
 import com.syncode.courirapps.R;
+import com.syncode.courirapps.data.local.SystemDataLocal;
+import com.syncode.courirapps.data.model.MessageOnly;
 import com.syncode.courirapps.data.model.Transaction;
+import com.syncode.courirapps.data.network.repository.FirebaseRepository;
+import com.syncode.courirapps.ui.maps.MapsViewModel;
 
 import in.shadowfax.proswipebutton.ProSwipeButton;
 
@@ -22,18 +29,15 @@ public class DetailTransactionActivity extends AppCompatActivity {
 
     private String coordinate;
 
+    private SystemDataLocal systemDataLocal;
+    private FirebaseRepository firebaseRepository;
+    private MapsViewModel mapsViewModel;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail_transaction);
         ProSwipeButton proSwipeBtn = findViewById(R.id.swipeEnd);
-        proSwipeBtn.setOnSwipeListener(() -> new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                proSwipeBtn.showResultIcon(true);
-            }
-        }, 2000));
-
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
@@ -46,7 +50,8 @@ public class DetailTransactionActivity extends AppCompatActivity {
         txtAddress = findViewById(R.id.txtAddress);
         txtProductName = findViewById(R.id.txtProductName);
         txtProductQuality = findViewById(R.id.txtProductQuality);
-
+        systemDataLocal = new SystemDataLocal(this);
+        firebaseRepository = new FirebaseRepository(this);
         Intent intent = getIntent();
         Transaction transaction = intent.getParcelableExtra("transaction");
         if (transaction != null) {
@@ -75,12 +80,41 @@ public class DetailTransactionActivity extends AppCompatActivity {
             phoneIntent.setData(Uri.parse("tel:089506277284"));
             startActivity(phoneIntent);
         });
+
+        mapsViewModel = ViewModelProviders.of(this).get(MapsViewModel.class);
+        proSwipeBtn.setOnSwipeListener(() -> new Handler().postDelayed(() -> {
+            if (transaction != null) {
+                firebaseRepository.deleteTrackingCoordinate(transaction.getIdTransaction());
+                mapsViewModel.getResponsesUpdateStatus(transaction.getIdTransaction(), 3).observe(this, new Observer<MessageOnly>() {
+                    @Override
+                    public void onChanged(MessageOnly messageOnly) {
+                        if (messageOnly.isStatus()) {
+                            onBackPressed();
+                        }
+                    }
+                });
+                systemDataLocal.destroyStatus();
+            }
+            proSwipeBtn.showResultIcon(true, true);
+        }, 2000));
     }
 
     @Override
     public boolean onSupportNavigateUp() {
-        onBackPressed();
+        if (systemDataLocal.getStatusCourier()) {
+            Toast.makeText(this, "Selesaikan Pengiriman Terlebih Dahulu", Toast.LENGTH_LONG).show();
+        } else {
+            onBackPressed();
+        }
         return super.onSupportNavigateUp();
     }
 
+    @Override
+    public void onBackPressed() {
+        if (systemDataLocal.getStatusCourier()) {
+            Toast.makeText(this, "Selesaikan Pengiriman Terlebih Dahulu", Toast.LENGTH_LONG).show();
+        } else {
+            super.onBackPressed();
+        }
+    }
 }
