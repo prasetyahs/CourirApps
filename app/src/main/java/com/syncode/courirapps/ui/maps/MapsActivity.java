@@ -1,5 +1,6 @@
 package com.syncode.courirapps.ui.maps;
 
+import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
@@ -27,7 +28,6 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -45,7 +45,9 @@ import com.syncode.courirapps.data.network.repository.FirebaseRepository;
 import com.syncode.courirapps.ui.detail.DetailTransactionActivity;
 import com.syncode.courirapps.ui.login.LoginActivity;
 import com.syncode.courirapps.utils.Formula;
+import com.syncode.courirapps.utils.LatLngInterpolator;
 import com.syncode.courirapps.utils.LocationProvider;
+import com.syncode.courirapps.utils.MarkerAnimation;
 import com.syncode.courirapps.utils.SwitchActivity;
 
 import java.util.Collections;
@@ -98,12 +100,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                     mapsCourier.setBuildingsEnabled(true);
                     if (courierMarker == null) {
-                        System.out.println("true");
                         courierMarker = mapsCourier.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromResource(R.drawable.car2)).position(locationCourier));
                     } else {
-                        //MarkerAnimation.animateMarkerToGB(courierMarker, locationCourier, new LatLngInterpolator.Spherical());
-                        courierMarker.remove();
-                        courierMarker = mapsCourier.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromResource(R.drawable.car2)).position(locationCourier));
+                        MarkerAnimation.animateMarkerToGB(courierMarker, locationCourier, new LatLngInterpolator.Spherical());
+//                        courierMarker.remove();
+//                        courierMarker = mapsCourier.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromResource(R.drawable.car2)).position(locationCourier));
                     }
                 }
             }
@@ -118,11 +119,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         }
     };
-
-    @NonNull
-    private CameraPosition getCameraPositionWithBearing(LatLng latLng) {
-        return new CameraPosition.Builder().target(latLng).zoom(16).build();
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -262,7 +258,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private Snackbar showSnackBar(String name, String address, Transaction transaction) {
         Snackbar snackbar = Snackbar.make(rootLayout, "", Snackbar.LENGTH_INDEFINITE);
-        View view = getLayoutInflater().inflate(R.layout.snackbar_direction, null);
+        @SuppressLint("InflateParams") View view = getLayoutInflater().inflate(R.layout.snackbar_direction, null);
         snackbar.getView().setBackgroundColor(Color.WHITE);
         ((ViewGroup) snackbar.getView()).removeAllViews();
         ((ViewGroup) snackbar.getView()).addView(view);
@@ -279,7 +275,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             trackingModel.setLat2(lat);
             trackingModel.setLot2(lon);
             snackbar.dismiss();
-            mapsViewModel.getResponsesUpdateStatus(transaction.getIdTransaction(), 2).observe(this, messageOnly -> {});
+            mapsViewModel.getResponsesUpdateStatus(transaction.getIdTransaction(), 2).observe(this, messageOnly -> {
+            });
             SwitchActivity.mainSwitch(this, DetailTransactionActivity.class, transaction, "transaction");
         });
 
@@ -298,9 +295,4 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         return super.onOptionsItemSelected(item);
     }
 
-
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-    }
 }
