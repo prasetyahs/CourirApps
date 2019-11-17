@@ -1,5 +1,6 @@
 package com.syncode.courirapps.ui.detail;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -10,34 +11,31 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 
 import com.syncode.courirapps.R;
 import com.syncode.courirapps.data.local.SystemDataLocal;
-import com.syncode.courirapps.data.model.MessageOnly;
 import com.syncode.courirapps.data.model.Transaction;
 import com.syncode.courirapps.data.network.repository.FirebaseRepository;
-import com.syncode.courirapps.ui.maps.MapsViewModel;
 
 import in.shadowfax.proswipebutton.ProSwipeButton;
 
 public class DetailTransactionActivity extends AppCompatActivity {
 
     private ImageView imgPhone, imgMaps, imgSms;
-    private TextView txtName, txtAddress, txtProductName, txtDistance, txtProductQuality;
-
-    private String coordinate;
-
+    private TextView txtName, txtAddress, txtProductName, txtProductQuality, txtOrderAmount, txtPriceAll;
     private SystemDataLocal systemDataLocal;
+    private ProSwipeButton proSwipeBtn;
     private FirebaseRepository firebaseRepository;
-    private MapsViewModel mapsViewModel;
+    private DetailTransactionViewModel detailTransactionViewModel;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail_transaction);
-        ProSwipeButton proSwipeBtn = findViewById(R.id.swipeEnd);
+        proSwipeBtn = findViewById(R.id.swipeEnd);
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
@@ -50,53 +48,24 @@ public class DetailTransactionActivity extends AppCompatActivity {
         txtAddress = findViewById(R.id.txtAddress);
         txtProductName = findViewById(R.id.txtProductName);
         txtProductQuality = findViewById(R.id.txtProductQuality);
+        txtOrderAmount = findViewById(R.id.txtOrderAmount);
+        txtPriceAll = findViewById(R.id.txtPriceAll);
         systemDataLocal = new SystemDataLocal(this);
         firebaseRepository = new FirebaseRepository(this);
+        detailTransactionViewModel = ViewModelProviders.of(this).get(DetailTransactionViewModel.class);
         Intent intent = getIntent();
         Transaction transaction = intent.getParcelableExtra("transaction");
         if (transaction != null) {
-            txtName.setText("Nama : ".concat(transaction.getFname()).concat(transaction.getLname()));
-            txtAddress.setText("Alamat : ".concat(transaction.getStreet()));
-            txtProductName.setText("Nama : ".concat(transaction.getProductName()));
-            coordinate = transaction.getCoordinate();
+           setDetailTransaction(transaction);
+        } else {
+            detailTransactionViewModel.getSingleTransaction(systemDataLocal.getIdTransaction()).observe(this, transaction1 -> {
+                if (transaction1 != null) {
+                    setDetailTransaction(transaction1);
+                }
+            });
         }
 
-        imgMaps.setOnClickListener(view -> {
-            String[] latLon = coordinate.split(",");
-            Uri gmmIntentUri = Uri.parse("google.navigation:q=" + latLon[0] + "," + latLon[1]);
-            Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
-            mapIntent.setPackage("com.google.android.apps.maps");
-            startActivity(mapIntent);
-        });
 
-        imgSms.setOnClickListener(view -> {
-            Intent smsIntent = new Intent(Intent.ACTION_VIEW);
-            smsIntent.setData(Uri.parse("sms:089506277248"));
-            startActivity(smsIntent);
-        });
-
-        imgPhone.setOnClickListener(view -> {
-            Intent phoneIntent = new Intent(Intent.ACTION_DIAL);
-            phoneIntent.setData(Uri.parse("tel:089506277284"));
-            startActivity(phoneIntent);
-        });
-
-        mapsViewModel = ViewModelProviders.of(this).get(MapsViewModel.class);
-        proSwipeBtn.setOnSwipeListener(() -> new Handler().postDelayed(() -> {
-            if (transaction != null) {
-                firebaseRepository.deleteTrackingCoordinate(transaction.getIdTransaction());
-                mapsViewModel.getResponsesUpdateStatus(transaction.getIdTransaction(), 3).observe(this, new Observer<MessageOnly>() {
-                    @Override
-                    public void onChanged(MessageOnly messageOnly) {
-                        if (messageOnly.isStatus()) {
-                            onBackPressed();
-                        }
-                    }
-                });
-                systemDataLocal.destroyStatus();
-            }
-            proSwipeBtn.showResultIcon(true, true);
-        }, 2000));
     }
 
     @Override
@@ -116,5 +85,47 @@ public class DetailTransactionActivity extends AppCompatActivity {
         } else {
             super.onBackPressed();
         }
+    }
+
+
+    @SuppressLint("SetTextI18n")
+    private void setDetailTransaction(Transaction transaction) {
+        txtName.setText("Nama : ".concat(transaction.getFname()+" "+transaction.getLname()));
+        txtAddress.setText("Alamat : ".concat(transaction.getStreet()));
+        txtProductName.setText("Nama Product : ".concat(transaction.getProductName()));
+        txtOrderAmount.setText("Jumlah Order : ".concat(String.valueOf(transaction.getOrderAmount())));
+        txtProductQuality.setText("Quality : ".concat(transaction.getQuality()));
+        txtPriceAll.setText("Harga Total : Rp.".concat(String.valueOf(transaction.getTotalTransaction())));
+        imgSms.setOnClickListener(view -> {
+            Intent smsIntent = new Intent(Intent.ACTION_VIEW);
+            smsIntent.setData(Uri.parse("sms:" + transaction.getPhone()));
+            startActivity(smsIntent);
+        });
+
+        imgPhone.setOnClickListener(view -> {
+            Intent phoneIntent = new Intent(Intent.ACTION_DIAL);
+            phoneIntent.setData(Uri.parse("tel:" + transaction.getPhone()));
+            startActivity(phoneIntent);
+        });
+
+        imgMaps.setOnClickListener(view -> {
+            String[] latLon = transaction.getCoordinate().split(",");
+            Uri gmmIntentUri = Uri.parse("google.navigation:q=" + latLon[0] + "," + latLon[1]);
+            Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+            mapIntent.setPackage("com.google.android.apps.maps");
+            startActivity(mapIntent);
+        });
+
+
+        proSwipeBtn.setOnSwipeListener(() -> new Handler().postDelayed(() -> {
+            firebaseRepository.deleteTrackingCoordinate(transaction.getIdTransaction());
+            detailTransactionViewModel.getResponsesUpdateStatus(transaction.getIdTransaction(), 3).observe(this, messageOnly -> {
+                if (messageOnly.isStatus()) {
+                    onBackPressed();
+                }
+            });
+            systemDataLocal.destroyStatus();
+            proSwipeBtn.showResultIcon(true, true);
+        }, 2000));
     }
 }

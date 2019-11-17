@@ -34,7 +34,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/margin_top"
-                android:text="Name : Prasetya Hadi Saputra"
                 android:textSize="14sp" />
 
             <TextView
@@ -42,7 +41,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/margin_top"
-                android:text="Alamat : Jalan Kesadaran Rt 02 Rw 07 Kecamatan Jatinegara"
                 android:textSize="14sp" />
 
         </LinearLayout>
@@ -67,7 +65,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Product"
+                android:text="@string/informasi_transaksi"
                 android:textColor="#000"
                 android:textSize="15sp"
                 android:textStyle="bold" />
@@ -76,15 +74,26 @@
                 android:id="@+id/txtProductName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/margin_top"
-                android:text="Nama : Telor Ayam Negeri" />
+                android:layout_marginTop="@dimen/margin_top" />
 
             <TextView
                 android:id="@+id/txtProductQuality"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/margin_top"
-                android:text="Kualitas : Retak" />
+                android:layout_marginTop="@dimen/margin_top" />
+
+            <TextView
+                android:id="@+id/txtOrderAmount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/margin_top" />
+
+
+            <TextView
+                android:id="@+id/txtPriceAll"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/margin_top" />
 
         </LinearLayout>
 
@@ -110,17 +119,10 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Kurir"
+                android:text="@string/kurir"
                 android:textColor="#000"
                 android:textSize="15sp"
                 android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/txtDistance"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/margin_top"
-                android:text="Estimasi Jarak : 10 km" />
 
             <View
                 android:layout_width="match_parent"
@@ -129,10 +131,10 @@
                 android:background="#7C7C7C" />
 
             <RelativeLayout
-                android:gravity="center"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/margin_top"
+                android:gravity="center"
                 android:orientation="horizontal">
 
                 <ImageView
@@ -175,10 +177,10 @@
         app:layout_constraintStart_toStartOf="parent">
 
         <LinearLayout
-            android:padding="20dp"
-            android:gravity="center"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:padding="10dp">
 
             <in.shadowfax.proswipebutton.ProSwipeButton
                 android:id="@+id/swipeEnd"

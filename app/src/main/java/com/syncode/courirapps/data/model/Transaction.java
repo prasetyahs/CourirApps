@@ -12,6 +12,10 @@ public class Transaction implements Parcelable {
     @SerializedName("lname")
     private String lname;
 
+    public void setDistance(double distance) {
+        this.distance = distance;
+    }
+
     @SerializedName("kordinat")
     private String coordinate;
 
@@ -27,22 +31,22 @@ public class Transaction implements Parcelable {
     @SerializedName("id_transaksi")
     private String idTransaction;
 
+    @SerializedName("quality")
+    private String quality;
+
+
+    @SerializedName("jumlah_order")
+    private int orderAmount;
+
+    @SerializedName("phone")
+    private String phone;
+
+    @SerializedName("total_transaksi")
+    private int totalTransaction;
+
 
     private double distance;
 
-    public Transaction(String fname, String lname, String coordinate, String street, String productName, String idOrder, String idTransaction) {
-        this.fname = fname;
-        this.lname = lname;
-        this.coordinate = coordinate;
-        this.street = street;
-        this.productName = productName;
-        this.idOrder = idOrder;
-        this.idTransaction = idTransaction;
-    }
-
-    public void setDistance(double distance) {
-        this.distance = distance;
-    }
 
     public String getFname() {
         return fname;
@@ -72,14 +76,29 @@ public class Transaction implements Parcelable {
         return idTransaction;
     }
 
+    public String getQuality() {
+        return quality;
+    }
+
+    public int getOrderAmount() {
+        return orderAmount;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public double getDistance() {
+        return distance;
+    }
 
     @Override
     public int describeContents() {
         return 0;
     }
 
-    public double getDistance() {
-        return distance;
+    public int getTotalTransaction() {
+        return totalTransaction;
     }
 
     @Override
@@ -91,7 +110,14 @@ public class Transaction implements Parcelable {
         dest.writeString(this.productName);
         dest.writeString(this.idOrder);
         dest.writeString(this.idTransaction);
+        dest.writeString(this.quality);
+        dest.writeInt(this.orderAmount);
+        dest.writeString(this.phone);
         dest.writeDouble(this.distance);
+        dest.writeInt(this.totalTransaction);
+    }
+
+    public Transaction() {
     }
 
     protected Transaction(Parcel in) {
@@ -102,7 +128,11 @@ public class Transaction implements Parcelable {
         this.productName = in.readString();
         this.idOrder = in.readString();
         this.idTransaction = in.readString();
+        this.quality = in.readString();
+        this.orderAmount = in.readInt();
+        this.phone = in.readString();
         this.distance = in.readDouble();
+        this.totalTransaction = in.readInt();
     }
 
     public static final Parcelable.Creator<Transaction> CREATOR = new Parcelable.Creator<Transaction>() {

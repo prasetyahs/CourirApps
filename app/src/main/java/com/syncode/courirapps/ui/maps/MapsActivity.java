@@ -45,9 +45,7 @@ import com.syncode.courirapps.data.network.repository.FirebaseRepository;
 import com.syncode.courirapps.ui.detail.DetailTransactionActivity;
 import com.syncode.courirapps.ui.login.LoginActivity;
 import com.syncode.courirapps.utils.Formula;
-import com.syncode.courirapps.utils.LatLngInterpolator;
 import com.syncode.courirapps.utils.LocationProvider;
-import com.syncode.courirapps.utils.MarkerAnimation;
 import com.syncode.courirapps.utils.SwitchActivity;
 
 import java.util.Collections;
@@ -92,7 +90,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             trackingModel.setLat(myLocationLat);
                             trackingModel.setLont(myLocationLon);
                             double distance = Formula.haversineFormula(myLocationLon, trackingModel.getLot2(), myLocationLat, trackingModel.getLat2());
-                            if (distance < 5.0) {
+                            if (distance < 0.2) {
                                 trackingModel.setStatus("Pesanan Anda Sebentar Lagi Sampai");
                             }
                             firebaseRepository.setTrackingCoordinate(trackingModel);
@@ -102,9 +100,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     if (courierMarker == null) {
                         courierMarker = mapsCourier.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromResource(R.drawable.car2)).position(locationCourier));
                     } else {
-                        MarkerAnimation.animateMarkerToGB(courierMarker, locationCourier, new LatLngInterpolator.Spherical());
-//                        courierMarker.remove();
-//                        courierMarker = mapsCourier.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromResource(R.drawable.car2)).position(locationCourier));
+                        // MarkerAnimation.animateMarkerToGB(courierMarker, locationCourier, new LatLngInterpolator.Spherical());
+                        courierMarker.remove();
+                        courierMarker = mapsCourier.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromResource(R.drawable.car2)).position(locationCourier));
                     }
                 }
             }
@@ -135,6 +133,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         rootLayout = findViewById(R.id.rootLayout);
         trackingModel = new TrackingModel();
         firebaseRepository = new FirebaseRepository();
+
     }
 
 
@@ -153,6 +152,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (courierMarker == null) {
                 courierMarker = mapsCourier.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromResource(R.drawable.car2)).position(locationCourier));
             }
+        }
+        if (systemDataLocal.getStatusCourier() && systemDataLocal.getIdTransaction() != null && systemDataLocal.getCoordinate() != null) {
+            trackingModel.setIdTransaction(systemDataLocal.getIdTransaction());
+            String[] coordinate = systemDataLocal.getCoordinate().split(",");
+            trackingModel.setStatus("Sedang di kirim");
+            double lat = Double.parseDouble(coordinate[0]);
+            double lon = Double.parseDouble(coordinate[1]);
+            trackingModel.setLat2(lat);
+            trackingModel.setLot2(lon);
+            SwitchActivity.mainSwitch(this, DetailTransactionActivity.class);
         }
     }
 
@@ -201,13 +210,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     mapsViewModel.getDirection(direction, "drive", "e6641af6d8454e3dbed411e83be9c0e6").observe(MapsActivity.this, MapsActivity.this);
                     if (transactionResponse != null) {
                         String fname = transactionResponse.getDataTransaction().get(pos).getFname();
-                        String lname = transactionResponse.getDataTransaction().get(pos).getLname();
-                        String coordinate = transactionResponse.getDataTransaction().get(pos).getCoordinate();
                         String street = transactionResponse.getDataTransaction().get(pos).getStreet();
-                        String productName = transactionResponse.getDataTransaction().get(pos).getProductName();
-                        String idOrder = transactionResponse.getDataTransaction().get(pos).getIdOrder();
-                        String idTransaction = transactionResponse.getDataTransaction().get(pos).getIdTransaction();
-                        Transaction transaction = new Transaction(fname, lname, coordinate, street, productName, idOrder, idTransaction);
+                        Transaction transaction = transactionResponse.getDataTransaction().get(pos);
+
                         showSnackBar(fname, street, transaction).show();
                     }
                 }
@@ -221,6 +226,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onDestroy();
         locationProvider.removeLocationUpdates(locationCallback);
     }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
@@ -267,7 +273,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         Button btnDetail = view.findViewById(R.id.btnDetail);
         btnDetail.setOnClickListener(view1 -> {
             trackingModel.setIdTransaction(transaction.getIdTransaction());
-            systemDataLocal.setStatusCourier(true);
+            systemDataLocal.setStatusCourier(true, transaction.getIdTransaction(), transaction.getCoordinate());
             String[] coordinate = transaction.getCoordinate().split(",");
             trackingModel.setStatus("Sedang di kirim");
             double lat = Double.parseDouble(coordinate[0]);
@@ -279,7 +285,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             });
             SwitchActivity.mainSwitch(this, DetailTransactionActivity.class, transaction, "transaction");
         });
-
         txtName.setText(name);
         txtAddress.setText(address);
         return snackbar;

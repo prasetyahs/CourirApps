@@ -1,6 +1,7 @@
 package com.syncode.courirapps.data.network.api;
 
 import com.syncode.courirapps.data.model.MessageOnly;
+import com.syncode.courirapps.data.model.Transaction;
 import com.syncode.courirapps.data.model.direction.Direction;
 import com.syncode.courirapps.data.response.LoginResponse;
 import com.syncode.courirapps.data.response.TransactionResponse;
@@ -19,6 +20,9 @@ public interface ApiInterface {
     @POST("courier/login")
     Call<LoginResponse> loginCourier(@Field("username") String username, @Field("password") String password);
 
+    @FormUrlEncoded
+    @POST("courier/singletransaction")
+    Call<Transaction> getSingleTransaction(@Field("id_transaction") String idTransaction);
 
     @FormUrlEncoded
     @POST("courier/transaction")

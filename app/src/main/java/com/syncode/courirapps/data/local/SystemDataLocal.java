@@ -10,7 +10,7 @@ public class SystemDataLocal {
 
     private SharedPreferences sharedPreferences;
     private Context context;
-    private static final String KEY_USER = "User";
+    private static final String KEY_USER = "courier";
     private static final String KEY_STS = "status";
     private Courier courier;
 
@@ -71,10 +71,12 @@ public class SystemDataLocal {
         return new Courier(username, fname, lname, email, type, idCourier, password);
     }
 
-    public void setStatusCourier(boolean status) {
+    public void setStatusCourier(boolean status, String idTransaction, String coordinate) {
         sharedPreferences = context.getSharedPreferences(KEY_STS, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean("status", status);
+        editor.putString("id_transaction", idTransaction);
+        editor.putString("coordinate", coordinate);
         editor.apply();
     }
 
@@ -83,6 +85,15 @@ public class SystemDataLocal {
         return sharedPreferences.getBoolean("status", false);
     }
 
+    public String getIdTransaction() {
+        sharedPreferences = context.getSharedPreferences(KEY_STS, Context.MODE_PRIVATE);
+        return sharedPreferences.getString("id_transaction", "");
+    }
+
+    public String getCoordinate(){
+        sharedPreferences = context.getSharedPreferences(KEY_STS, Context.MODE_PRIVATE);
+        return sharedPreferences.getString("coordinate", "");
+    }
     public void destroyStatus() {
         sharedPreferences = context.getSharedPreferences(KEY_STS, Context.MODE_PRIVATE);
         sharedPreferences.edit().clear().apply();

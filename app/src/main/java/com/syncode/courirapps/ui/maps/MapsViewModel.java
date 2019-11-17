@@ -27,9 +27,7 @@ public class MapsViewModel extends ViewModel {
         return transactionRepository.getResponseMutableLiveData(idCourier);
     }
 
-
     public LiveData<MessageOnly> getResponsesUpdateStatus(String idTransaction, int status) {
         return transactionRepository.requestUpdateStatus(idTransaction, status);
     }
-
 }
