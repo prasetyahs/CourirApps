@@ -177,7 +177,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapsCourier = googleMap;
         if (transactionList != null) {
             transactionList.clear();
-            showSnackBar("", "", null).dismiss();
+            showSnackBar("", "", 0, null).dismiss();
         }
         mapsViewModel.getTransaction(systemDataLocal.getLoginData().getIdCourier()).observe(this, transactionResponse -> {
             int position = 0;
@@ -202,7 +202,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
             maps.setOnMarkerClickListener(marker -> {
                 int pos = (int) marker.getTag();
-                if (pos > 1) {
+                if (pos > 0) {
                     Toast.makeText(MapsActivity.this, "Pilih Jarak Terdekat Terlebih Dahulu", Toast.LENGTH_LONG).show();
                 } else {
                     LatLng latLng = marker.getPosition();
@@ -212,8 +212,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         String fname = transactionResponse.getDataTransaction().get(pos).getFname();
                         String street = transactionResponse.getDataTransaction().get(pos).getStreet();
                         Transaction transaction = transactionResponse.getDataTransaction().get(pos);
-
-                        showSnackBar(fname, street, transaction).show();
+                        showSnackBar(fname, street, transaction.getDistance(), transaction).show();
                     }
                 }
                 return true;
@@ -262,7 +261,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    private Snackbar showSnackBar(String name, String address, Transaction transaction) {
+    @SuppressLint("SetTextI18n")
+    private Snackbar showSnackBar(String name, String address, double distance, Transaction transaction) {
         Snackbar snackbar = Snackbar.make(rootLayout, "", Snackbar.LENGTH_INDEFINITE);
         @SuppressLint("InflateParams") View view = getLayoutInflater().inflate(R.layout.snackbar_direction, null);
         snackbar.getView().setBackgroundColor(Color.WHITE);
@@ -270,6 +270,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         ((ViewGroup) snackbar.getView()).addView(view);
         TextView txtName = view.findViewById(R.id.txtName);
         TextView txtAddress = view.findViewById(R.id.txtAddress);
+        TextView txtDistance = view.findViewById(R.id.txtDistance);
         Button btnDetail = view.findViewById(R.id.btnDetail);
         btnDetail.setOnClickListener(view1 -> {
             trackingModel.setIdTransaction(transaction.getIdTransaction());
@@ -287,6 +288,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
         txtName.setText(name);
         txtAddress.setText(address);
+        txtDistance.setText("Distance : " + distance+" KM");
         return snackbar;
     }
 
