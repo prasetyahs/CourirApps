@@ -8,7 +8,7 @@ public class ApiClient {
 
     public static Retrofit getClient() {
         if (retrofit == null) {
-            retrofit = new Retrofit.Builder().baseUrl("http://192.168.100.11/telor/api/")
+            retrofit = new Retrofit.Builder().baseUrl("http://192.168.43.31/telor/api/")
                     .addConverterFactory(GsonConverterFactory.create())
                     .build();
 

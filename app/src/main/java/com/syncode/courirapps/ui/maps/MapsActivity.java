@@ -72,6 +72,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ConstraintLayout rootLayout;
     private Polyline polylineDirection;
     private TrackingModel trackingModel;
+
     private FirebaseRepository firebaseRepository;
     private LocationCallback locationCallback = new LocationCallback() {
         @Override
@@ -93,14 +94,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             if (distance < 0.2) {
                                 trackingModel.setStatus("Pesanan Anda Sebentar Lagi Sampai");
                             }
-                            firebaseRepository.setTrackingCoordinate(trackingModel);
+                            try {
+                                Thread.sleep(1000);
+                                firebaseRepository.setTrackingCoordinate(trackingModel);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
                     mapsCourier.setBuildingsEnabled(true);
                     if (courierMarker == null) {
                         courierMarker = mapsCourier.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromResource(R.drawable.car2)).position(locationCourier));
                     } else {
-                        // MarkerAnimation.animateMarkerToGB(courierMarker, locationCourier, new LatLngInterpolator.Spherical());
                         courierMarker.remove();
                         courierMarker = mapsCourier.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromResource(R.drawable.car2)).position(locationCourier));
                     }
@@ -184,24 +189,32 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (transactionResponse != null) {
                 if (transactionResponse.getDataTransaction().size() > 0) {
                     transactionList = transactionResponse.getDataTransaction();
+
                     for (Transaction trans : transactionList) {
                         String[] coor = trans.getCoordinate().split(",");
                         double latT = Double.parseDouble(coor[0]);
                         double lotT = Double.parseDouble(coor[1]);
                         double distance = Formula.haversineFormula(lotT, myLocationLon, latT, myLocationLat);
                         trans.setDistance(distance);
+                    }
+
+                    Collections.sort(transactionList, (transaction, t1) -> Double.compare(transaction.getDistance(), t1.getDistance()));
+                    for (Transaction transaction : transactionList) {
+                        String[] coor = transaction.getCoordinate().split(",");
+                        double latT = Double.parseDouble(coor[0]);
+                        double lotT = Double.parseDouble(coor[1]);
                         locationAgent = new LatLng(latT, lotT);
                         agentMarker = maps.addMarker(new MarkerOptions().position(locationAgent));
-                        agentMarker.setTitle(trans.getFname());
-                        agentMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.store));
                         agentMarker.setTag(position);
+                        agentMarker.setTitle(transaction.getFname());
+                        agentMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.store));
                         position++;
                     }
-                    Collections.sort(transactionResponse.getDataTransaction(), (transaction, t1) -> Double.compare(transaction.getDistance(), t1.getDistance()));
                 }
             }
             maps.setOnMarkerClickListener(marker -> {
                 int pos = (int) marker.getTag();
+                System.out.println(String.valueOf(pos));
                 if (pos > 0) {
                     Toast.makeText(MapsActivity.this, "Pilih Jarak Terdekat Terlebih Dahulu", Toast.LENGTH_LONG).show();
                 } else {
@@ -288,7 +301,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
         txtName.setText(name);
         txtAddress.setText(address);
-        txtDistance.setText("Distance : " + distance+" KM");
+        txtDistance.setText("Distance : " + distance + " KM");
         return snackbar;
     }
 
