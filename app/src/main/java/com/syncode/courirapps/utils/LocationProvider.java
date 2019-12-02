@@ -4,36 +4,22 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.location.Location;
 import android.os.Build;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnSuccessListener;
 
 public class LocationProvider {
 
-    private double lat;
-
-    public double getLat() {
-        return lat;
-    }
-
-    public double getLot() {
-        return lot;
-    }
-
-    private double lot;
 
     private Context context;
 
     private FusedLocationProviderClient fusedLocationProviderClient;
 
-
-    public final static int CODE_LOCATION = 1;
     public final static int CODE_LOCATION_UPDATE = 2;
+    public final static int CODE_PERMISSION_LOCATION = 1;
 
     public LocationProvider(Context context) {
         this.context = context;
@@ -41,42 +27,10 @@ public class LocationProvider {
     }
 
 
-    public void setLat(double lat) {
-        this.lat = lat;
-    }
-
-    public void setLot(double lot) {
-        this.lot = lot;
-    }
-
-    public void setStartLocation() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && context.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                ((Activity) context).requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, CODE_LOCATION);
-            } else {
-                fusedLocationProviderClient.getLastLocation().addOnSuccessListener((Activity) context, new OnSuccessListener<Location>() {
-                    @Override
-                    public void onSuccess(Location location) {
-                        lot = location.getLongitude();
-                        lat = location.getLatitude();
-                    }
-                });
-            }
-        } else {
-            fusedLocationProviderClient.getLastLocation().addOnSuccessListener((Activity) context, new OnSuccessListener<Location>() {
-                @Override
-                public void onSuccess(Location location) {
-                    lot = location.getLongitude();
-                    lat = location.getLatitude();
-                }
-            });
-        }
-    }
-
     public void setLocationUpdate(LocationRequest locationRequest, LocationCallback locationCallback) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && context.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                ((Activity) context).requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION},CODE_LOCATION_UPDATE);
+                ((Activity) context).requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, CODE_LOCATION_UPDATE);
             } else {
                 fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, null);
             }

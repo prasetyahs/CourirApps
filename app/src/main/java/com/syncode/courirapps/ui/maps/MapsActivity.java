@@ -1,9 +1,11 @@
 package com.syncode.courirapps.ui.maps;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -52,6 +54,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.syncode.courirapps.utils.LocationProvider.CODE_LOCATION_UPDATE;
+import static com.syncode.courirapps.utils.LocationProvider.CODE_PERMISSION_LOCATION;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, Observer<Direction> {
 
@@ -154,7 +157,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         if (maps != null) {
             maps.clear();
-            if (courierMarker == null) {
+            if (courierMarker == null && locationCourier != null) {
                 courierMarker = mapsCourier.addMarker(new MarkerOptions().icon(BitmapDescriptorFactory.fromResource(R.drawable.car2)).position(locationCourier));
             }
         }
@@ -184,12 +187,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             transactionList.clear();
             showSnackBar("", "", 0, null).dismiss();
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION},CODE_PERMISSION_LOCATION);
+            }else{
+                maps.setMyLocationEnabled(true);
+            }
+        }
         mapsViewModel.getTransaction(systemDataLocal.getLoginData().getIdCourier()).observe(this, transactionResponse -> {
             int position = 0;
             if (transactionResponse != null) {
                 if (transactionResponse.getDataTransaction().size() > 0) {
                     transactionList = transactionResponse.getDataTransaction();
-
                     for (Transaction trans : transactionList) {
                         String[] coor = trans.getCoordinate().split(",");
                         double latT = Double.parseDouble(coor[0]);
@@ -214,7 +223,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
             maps.setOnMarkerClickListener(marker -> {
                 int pos = (int) marker.getTag();
-                System.out.println(String.valueOf(pos));
                 if (pos > 0) {
                     Toast.makeText(MapsActivity.this, "Pilih Jarak Terdekat Terlebih Dahulu", Toast.LENGTH_LONG).show();
                 } else {
@@ -240,6 +248,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
+    @SuppressLint("MissingPermission")
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
@@ -247,6 +256,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (requestCode == CODE_LOCATION_UPDATE) {
             if (grantResults.length > 0 && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
                 locationProvider.setLocationUpdate(locationRequest, locationCallback);
+                mapsCourier.setMyLocationEnabled(true);
             }
         }
     }
